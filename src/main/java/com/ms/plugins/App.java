@@ -65,7 +65,7 @@ public class App extends JavaPlugin implements Listener {
                         Location location = player.getLocation();
                         PlayerInventory inventory = player.getInventory();
                         UUID playerId = player.getUniqueId();
-                        if (location.getBlock().getLightLevel() < 2 && location.getY() < -40
+                        if (location.getBlock().getLightLevel() < 2 && location.getY() < 40
                                 && !player.hasPotionEffect(PotionEffectType.NIGHT_VISION)
                                 && !player.hasPotionEffect(PotionEffectType.GLOWING)
                                 && inventory.getItemInMainHand().getType() != Material.TORCH
