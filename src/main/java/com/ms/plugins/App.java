@@ -1,11 +1,19 @@
 package com.ms.plugins;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+
+import org.bukkit.Bukkit;
+import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Server;
+import org.bukkit.World;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.ShulkerBox;
+import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -16,15 +24,20 @@ import org.bukkit.event.inventory.PrepareItemCraftEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.CraftingInventory;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.inventory.ShapedRecipe;
 import org.bukkit.inventory.meta.BlockStateMeta;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.potion.PotionEffectType;
 
 public class App extends JavaPlugin implements Listener {
+    private Map<UUID, Integer> warnings = new HashMap<>();
+
     @Override
     public void onEnable() {
         Server server = getServer();
+        ConsoleCommandSender consoleSender = Bukkit.getConsoleSender();
         server.getPluginManager().registerEvents(this, this);
         ItemStack craftingStick = new ItemStack(Material.STICK);
         ItemMeta craftingStickMeta = craftingStick.getItemMeta();
@@ -45,6 +58,37 @@ public class App extends JavaPlugin implements Listener {
                 .shape("  C", " S ").setIngredient('C', Material.CRAFTING_TABLE).setIngredient('S', Material.STICK));
         server.addRecipe(new ShapedRecipe(new NamespacedKey(this, "shulker_stick"), shulkerStick)
                 .shape("  B", " S ").setIngredient('B', Material.SHULKER_BOX).setIngredient('S', Material.STICK));
+        server.getScheduler().scheduleSyncRepeatingTask(this, () -> {
+            for (World world : server.getWorlds())
+                if (world.getName().startsWith("hardcore"))
+                    for (Player player : world.getPlayers()) {
+                        Location location = player.getLocation();
+                        PlayerInventory inventory = player.getInventory();
+                        UUID playerId = player.getUniqueId();
+                        if (location.getBlock().getLightLevel() < 2 && location.getY() < -40
+                                && !player.hasPotionEffect(PotionEffectType.NIGHT_VISION)
+                                && !player.hasPotionEffect(PotionEffectType.GLOWING)
+                                && inventory.getItemInMainHand().getType() != Material.TORCH
+                                && inventory.getItemInOffHand().getType() != Material.TORCH)
+                            if (warnings.containsKey(playerId)) {
+                                int count = warnings.get(playerId) + 1;
+                                if (count == 5) {
+                                    server.dispatchCommand(consoleSender,
+                                            "warn " + player.getName() + " utilizzo della fullbright in hardcore");
+                                    warnings.remove(playerId);
+                                } else
+                                    warnings.put(playerId, count);
+                            } else
+                                warnings.put(playerId, 1);
+                        else if (warnings.containsKey(playerId)) {
+                            int count = warnings.get(playerId) - 1;
+                            if (count <= 0)
+                                warnings.remove(playerId);
+                            else
+                                warnings.put(playerId, count);
+                        }
+                    }
+        }, 200L, 200L);
     }
 
     @EventHandler
