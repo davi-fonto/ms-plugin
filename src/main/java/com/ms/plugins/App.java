@@ -1,10 +1,13 @@
 package com.ms.plugins;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
 import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
@@ -13,7 +16,11 @@ import org.bukkit.World;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.ShulkerBox;
+import org.bukkit.command.Command;
+import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
+import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -39,11 +46,22 @@ public class App extends JavaPlugin implements Listener {
         Server server = getServer();
         ConsoleCommandSender consoleSender = Bukkit.getConsoleSender();
         server.getPluginManager().registerEvents(this, this);
+        getCommand("hardhome").setExecutor(this);
+        getCommand("sethardhome").setExecutor(this);
         ItemStack craftingStick = new ItemStack(Material.STICK);
         ItemMeta craftingStickMeta = craftingStick.getItemMeta();
         ItemStack shulkerStick = new ItemStack(Material.SHULKER_BOX);
         ItemMeta shulkerStickMeta = shulkerStick.getItemMeta();
+        File file = new File(getDataFolder().getAbsolutePath(), "hardcore_homes.yml");
 
+        if (!file.exists()) {
+            file.getParentFile().mkdirs();
+            try {
+                file.createNewFile();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
         if (craftingStickMeta != null) {
             craftingStickMeta.setItemName("crafting_stick");
             craftingStickMeta.setDisplayName("§6Crafting stick");
@@ -89,6 +107,57 @@ public class App extends JavaPlugin implements Listener {
                         }
                     }
         }, 200L, 200L);
+    }
+
+    @Override
+    public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+        if (!(sender instanceof Player)) {
+            sender.sendMessage(ChatColor.RED + "Comando disponibile solo ai giocatori!");
+            return true;
+        }
+        Player player = (Player) sender;
+        String commandName = command.getName().toLowerCase();
+        World world = player.getWorld();
+        if (commandName.equals("hardhome")) {
+            if (!world.getName().equals("hardcore_the_end")) {
+                sender.sendMessage(ChatColor.RED + "Puoi usare questo comando solo nell'end hardcore!");
+                return true;
+            }
+            Location location = player.getLocation();
+            if (Math.abs(location.getX()) > 8 || Math.abs(location.getZ()) > 8) {
+                sender.sendMessage(ChatColor.RED + "Assicurati di essere al centro dell'isola!");
+                return true;
+            }
+            File file = new File(getDataFolder(), "data.yml");
+            FileConfiguration dataConfig = YamlConfiguration.loadConfiguration(file);
+            String string = dataConfig.getString(player.getUniqueId() + ".home");
+            if (string == null) {
+                sender.sendMessage(ChatColor.RED + "Non hai una casa!");
+                return true;
+            }
+            String[] positions = string.split(",");
+            player.teleport(new Location(world, Double.parseDouble(positions[0]), Double.parseDouble(positions[1]),
+                    Double.parseDouble(positions[2])));
+            sender.sendMessage(ChatColor.GREEN + "Teleportato a casa!");
+        } else if (commandName.equals("sethardhome")) {
+            if (!world.getName().startsWith("hardcore")) {
+                sender.sendMessage(ChatColor.RED + "Puoi usare questo comando solo in hardcore!");
+                return true;
+            }
+            Location location = player.getLocation();
+            File file = new File(getDataFolder(), "data.yml");
+            FileConfiguration dataConfig = YamlConfiguration.loadConfiguration(file);
+            dataConfig.set(player.getUniqueId() + ".home",
+                    location.getX() + "," + location.getY() + "," + location.getZ());
+            try {
+                dataConfig.save(file);
+            } catch (IOException e) {
+                e.printStackTrace();
+                sender.sendMessage(ChatColor.RED + "Impossibile salvare la home!");
+            }
+            sender.sendMessage(ChatColor.GREEN + "Home impostata correttamente!");
+        }
+        return true;
     }
 
     @EventHandler

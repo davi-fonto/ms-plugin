@@ -3,3 +3,10 @@ name: MSPlugins
 version: 1.0.0
 description: Plugins for MS
 api-version: "1.21"
+commands:
+  hardhome:
+    description: Teleportati nella home hardcore quando sei nell'end
+    usage: /hardhome
+  sethardhome:
+    description: Imposta la tua home in hardcore
+    usage: /sethardhome
