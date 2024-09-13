@@ -76,9 +76,10 @@ public class App extends JavaPlugin implements Listener {
                 .shape("  C", " S ").setIngredient('C', Material.CRAFTING_TABLE).setIngredient('S', Material.STICK));
         server.addRecipe(new ShapedRecipe(new NamespacedKey(this, "shulker_stick"), shulkerStick)
                 .shape("  B", " S ").setIngredient('B', Material.SHULKER_BOX).setIngredient('S', Material.STICK));
+        // Anti full bright
         server.getScheduler().scheduleSyncRepeatingTask(this, () -> {
             for (World world : server.getWorlds())
-                if (world.getName().startsWith("hardcore"))
+                if (world.getName().equals("hardcore"))
                     for (Player player : world.getPlayers()) {
                         Location location = player.getLocation();
                         PlayerInventory inventory = player.getInventory();
@@ -118,8 +119,9 @@ public class App extends JavaPlugin implements Listener {
         Player player = (Player) sender;
         String commandName = command.getName().toLowerCase();
         World world = player.getWorld();
+        String name = world.getName();
         if (commandName.equals("hardhome")) {
-            if (!world.getName().equals("hardcore_the_end")) {
+            if (!name.equals("hardcore_the_end")) {
                 sender.sendMessage(ChatColor.RED + "Puoi usare questo comando solo nell'end hardcore!");
                 return true;
             }
@@ -136,11 +138,12 @@ public class App extends JavaPlugin implements Listener {
                 return true;
             }
             String[] positions = string.split(",");
-            player.teleport(new Location(world, Double.parseDouble(positions[0]), Double.parseDouble(positions[1]),
+            player.teleport(new Location(getServer().getWorld(positions[3]), Double.parseDouble(positions[0]),
+                    Double.parseDouble(positions[1]),
                     Double.parseDouble(positions[2])));
             sender.sendMessage(ChatColor.GREEN + "Teleportato a casa!");
         } else if (commandName.equals("sethardhome")) {
-            if (!world.getName().startsWith("hardcore")) {
+            if (!name.startsWith("hardcore")) {
                 sender.sendMessage(ChatColor.RED + "Puoi usare questo comando solo in hardcore!");
                 return true;
             }
@@ -148,7 +151,7 @@ public class App extends JavaPlugin implements Listener {
             File file = new File(getDataFolder(), "data.yml");
             FileConfiguration dataConfig = YamlConfiguration.loadConfiguration(file);
             dataConfig.set(player.getUniqueId() + ".home",
-                    location.getX() + "," + location.getY() + "," + location.getZ());
+                    location.getX() + "," + location.getY() + "," + location.getZ() + "," + name);
             try {
                 dataConfig.save(file);
             } catch (IOException e) {
