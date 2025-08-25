@@ -93,7 +93,7 @@ public class App extends JavaPlugin implements Listener {
                                 int count = warnings.get(playerId) + 1;
                                 if (count == 5) {
                                     server.dispatchCommand(consoleSender,
-                                            "warn " + player.getName() + " utilizzo della fullbright in hardcore");
+                                            "report " + player.getName() + " utilizzo della fullbright in hardcore");
                                     warnings.remove(playerId);
                                 } else
                                     warnings.put(playerId, count);
@@ -121,13 +121,13 @@ public class App extends JavaPlugin implements Listener {
         World world = player.getWorld();
         String name = world.getName();
         if (commandName.equals("hardhome")) {
-            if (!name.equals("hardcore_the_end")) {
-                sender.sendMessage(ChatColor.RED + "Puoi usare questo comando solo nell'end hardcore!");
+            if (!name.equals("hardcore")) {
+                sender.sendMessage(ChatColor.RED + "Puoi usare questo comando solo allo spawn hardcore!");
                 return true;
             }
             Location location = player.getLocation();
-            if (Math.abs(location.getX()) > 8 || Math.abs(location.getZ()) > 8) {
-                sender.sendMessage(ChatColor.RED + "Assicurati di essere al centro dell'isola!");
+            if (Math.abs(location.getX()) > 150 || Math.abs(location.getZ()) > 200) {
+                sender.sendMessage(ChatColor.RED + "Assicurati di essere allo spawn della hardcore!");
                 return true;
             }
             File file = new File(getDataFolder(), "data.yml");
